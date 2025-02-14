@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:k_chart/flutter_k_chart.dart';
+import 'package:k_chart_plus/k_chart_plus.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -14,18 +16,18 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key? key, this.title}) : super(key: key);
+  const MyHomePage({Key? key, this.title}) : super(key: key);
 
   final String? title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -33,8 +35,8 @@ class _MyHomePageState extends State<MyHomePage> {
   bool showLoading = true;
   bool _volHidden = false;
   MainState _mainState = MainState.MA;
-  SecondaryState _secondaryState = SecondaryState.MACD;
   // final Set<SecondaryState> _secondaryStateLi = <SecondaryState>{};
+  final List<SecondaryState> _secondaryStateLi = [];
   List<DepthEntity>? _bids, _asks;
 
   ChartStyle chartStyle = ChartStyle();
@@ -48,10 +50,12 @@ class _MyHomePageState extends State<MyHomePage> {
       final parseJson = json.decode(result);
       final tick = parseJson['tick'] as Map<String, dynamic>;
       final List<DepthEntity> bids = (tick['bids'] as List<dynamic>)
-          .map<DepthEntity>((item) => DepthEntity(item[0] as double, item[1] as double))
+          .map<DepthEntity>(
+              (item) => DepthEntity(item[0] as double, item[1] as double))
           .toList();
       final List<DepthEntity> asks = (tick['asks'] as List<dynamic>)
-          .map<DepthEntity>((item) => DepthEntity(item[0] as double, item[1] as double))
+          .map<DepthEntity>(
+              (item) => DepthEntity(item[0] as double, item[1] as double))
           .toList();
       initDepth(bids, asks);
     });
@@ -63,19 +67,19 @@ class _MyHomePageState extends State<MyHomePage> {
     _asks = [];
     double amount = 0.0;
     bids.sort((left, right) => left.price.compareTo(right.price));
-    bids.reversed.forEach((item) {
+    for (var item in bids.reversed) {
       amount += item.vol;
       item.vol = amount;
       _bids!.insert(0, item);
-    });
+    }
 
     amount = 0.0;
     asks.sort((left, right) => left.price.compareTo(right.price));
-    asks.forEach((item) {
+    for (var item in asks) {
       amount += item.vol;
       item.vol = amount;
       _asks!.add(item);
-    });
+    }
     setState(() {});
   }
 
@@ -93,22 +97,19 @@ class _MyHomePageState extends State<MyHomePage> {
               chartColors,
               mBaseHeight: 360,
               isTrendLine: false,
-              onSecondaryTap: () {
-                print('Secondary Tap');
-              },
               mainState: _mainState,
               volHidden: _volHidden,
-              // secondaryStateLi: _secondaryStateLi.toSet(),
-              secondaryState: SecondaryState.MACD,
+              secondaryStateLi: _secondaryStateLi.toSet(),
               fixedLength: 2,
               timeFormat: TimeFormat.YEAR_MONTH_DAY,
             ),
-            if (showLoading) Container(
-              width: double.infinity,
-              height: 450,
-              alignment: Alignment.center,
-              child: const CircularProgressIndicator(),
-            ),
+            if (showLoading)
+              Container(
+                width: double.infinity,
+                height: 450,
+                alignment: Alignment.center,
+                child: const CircularProgressIndicator(),
+              ),
           ]),
           _buildTitle(context, 'VOL'),
           buildVolButton(),
@@ -116,14 +117,18 @@ class _MyHomePageState extends State<MyHomePage> {
           buildMainButtons(),
           _buildTitle(context, 'Secondary State'),
           buildSecondButtons(),
-          // const SizedBox(height: 30),
-          // if (_bids != null && _asks != null)
-          //   Container(
-          //     color: Colors.white,
-          //     height: 300,
-          //     width: double.infinity,
-          //     child: DepthChart(_bids!, _asks!, chartColors),
-          //   )
+          const SizedBox(height: 30),
+          if (_bids != null && _asks != null)
+            Container(
+              color: Colors.white,
+              height: 320,
+              width: double.infinity,
+              child: DepthChart(
+                _bids!,
+                _asks!,
+                chartColors,
+              ),
+            )
         ],
       ),
     );
@@ -135,9 +140,9 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          // color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
+              // color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
@@ -154,8 +159,7 @@ class _MyHomePageState extends State<MyHomePage> {
             onPress: () {
               _volHidden = !_volHidden;
               setState(() {});
-            }
-        ),
+            }),
       ),
     );
   }
@@ -187,19 +191,17 @@ class _MyHomePageState extends State<MyHomePage> {
         spacing: 10,
         runSpacing: 5,
         children: SecondaryState.values.map((e) {
-          if (e == SecondaryState.NONE) return SizedBox();
-          bool isActive = _secondaryState == e;
+          bool isActive = _secondaryStateLi.contains(e);
           return _buildButton(
             context: context,
             title: e.name,
-            isActive: isActive,
+            isActive: _secondaryStateLi.contains(e),
             onPress: () {
               if (isActive) {
-                _secondaryState = SecondaryState.NONE;
+                _secondaryStateLi.remove(e);
               } else {
-                _secondaryState = e;
+                _secondaryStateLi.add(e);
               }
-              setState(() {});
             },
           );
         }).toList(),
@@ -219,7 +221,8 @@ class _MyHomePageState extends State<MyHomePage> {
       txtColor = Theme.of(context).primaryColor;
     } else {
       bgColor = Colors.transparent;
-      txtColor = Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(.75);
+      txtColor =
+          Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(.75);
     }
     return InkWell(
       onTap: () {
@@ -236,8 +239,8 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Text(
           title,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: txtColor,
-          ),
+                color: txtColor,
+              ),
           textAlign: TextAlign.center,
         ),
       ),
@@ -252,7 +255,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }).catchError((_) {
       showLoading = false;
       setState(() {});
-      print('### datas error $_');
+      debugPrint('### datas error $_');
     });
   }
 
@@ -264,7 +267,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (response.statusCode == 200) {
       result = response.body;
     } else {
-      print('Failed getting IP address');
+      debugPrint('Failed getting IP address');
     }
     return result;
   }

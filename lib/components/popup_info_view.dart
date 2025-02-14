@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:k_chart/chart_style.dart';
-import 'package:k_chart/chart_translations.dart';
+import 'package:k_chart_plus/chart_style.dart';
+import 'package:k_chart_plus/chart_translations.dart';
 import '../entity/k_line_entity.dart';
 import '../utils/date_format_util.dart';
 import '../utils/number_util.dart';
@@ -52,26 +52,34 @@ class PopupInfoView extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildItem(chartTranslations.date, getDate(entity.time)),
-        _buildItem(chartTranslations.open, entity.open.toStringAsFixed(fixedLength)),
-        _buildItem(chartTranslations.high, entity.high.toStringAsFixed(fixedLength)),
-        _buildItem(chartTranslations.low, entity.low.toStringAsFixed(fixedLength)),
-        _buildItem(chartTranslations.close, entity.close.toStringAsFixed(fixedLength)),
-        _buildColorItem(chartTranslations.changeAmount, upDown.toStringAsFixed(fixedLength), upDown > 0),
-        _buildColorItem(chartTranslations.change, '${upDownPercent.toStringAsFixed(2)}%', upDownPercent > 0),
+        _buildItem(
+            chartTranslations.open, entity.open.toStringAsFixed(fixedLength)),
+        _buildItem(
+            chartTranslations.high, entity.high.toStringAsFixed(fixedLength)),
+        _buildItem(
+            chartTranslations.low, entity.low.toStringAsFixed(fixedLength)),
+        _buildItem(
+            chartTranslations.close, entity.close.toStringAsFixed(fixedLength)),
+        _buildColorItem(chartTranslations.changeAmount,
+            upDown.toStringAsFixed(fixedLength), upDown > 0),
+        _buildColorItem(chartTranslations.change,
+            '${upDownPercent.toStringAsFixed(2)}%', upDownPercent > 0),
         _buildItem(chartTranslations.vol, NumberUtil.format(entity.vol)),
-        if (entityAmount != null) _buildItem(chartTranslations.amount, entityAmount.toInt().toString()),
+        if (entityAmount != null)
+          _buildItem(chartTranslations.amount, entityAmount.toInt().toString()),
       ],
     );
   }
 
-  Widget _buildColorItem(String label, String info,  bool isUp) {
+  Widget _buildColorItem(String label, String info, bool isUp) {
     if (isUp) {
-      return _buildItem(label, '+$info', textColor: chartColors.infoWindowUpColor);
+      return _buildItem(label, '+$info',
+          textColor: chartColors.infoWindowUpColor);
     }
     return _buildItem(label, info, textColor: chartColors.infoWindowDnColor);
   }
 
-  Widget _buildItem(String label, String info, { Color? textColor }) {
+  Widget _buildItem(String label, String info, {Color? textColor}) {
     final infoWidget = Padding(
       padding: const EdgeInsets.only(bottom: 6.0),
       child: Row(
@@ -88,7 +96,9 @@ class PopupInfoView extends StatelessWidget {
           Expanded(
             child: Text(
               info,
-              style: TextStyle(color: textColor ?? chartColors.infoWindowNormalColor, fontSize: 10.0),
+              style: TextStyle(
+                  color: textColor ?? chartColors.infoWindowNormalColor,
+                  fontSize: 10.0),
               textAlign: TextAlign.right,
             ),
           ),
@@ -96,12 +106,13 @@ class PopupInfoView extends StatelessWidget {
       ),
     );
     return materialInfoDialog
-      ? Material(color: Colors.transparent, child: infoWidget)
-      : infoWidget;
+        ? Material(color: Colors.transparent, child: infoWidget)
+        : infoWidget;
   }
 
   String getDate(int? date) => dateFormat(
-    DateTime.fromMillisecondsSinceEpoch(date ?? DateTime.now().millisecondsSinceEpoch),
-    timeFormat,
-  );
+        DateTime.fromMillisecondsSinceEpoch(
+            date ?? DateTime.now().millisecondsSinceEpoch),
+        timeFormat,
+      );
 }

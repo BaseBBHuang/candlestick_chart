@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:k_chart/chart_translations.dart';
-import 'package:k_chart/components/popup_info_view.dart';
-import 'package:k_chart/flutter_k_chart.dart';
+import 'package:k_chart_plus/chart_translations.dart';
+import 'package:k_chart_plus/components/popup_info_view.dart';
+import 'package:k_chart_plus/k_chart_plus.dart';
 import 'renderer/base_dimension.dart';
 
 enum MainState { MA, BOLL, NONE }
 
-enum SecondaryState { MACD, KDJ, RSI, WR, CCI, NONE }
-// enum SecondaryState { MACD, KDJ, RSI, WR, CCI } //no support NONE
+// enum SecondaryState { MACD, KDJ, RSI, WR, CCI, NONE }
+enum SecondaryState { MACD, KDJ, RSI, WR, CCI } //no support NONE
 
 class TimeFormat {
   static const List<String> YEAR_MONTH_DAY = [yyyy, '-', mm, '-', dd];
@@ -29,10 +29,11 @@ class KChartWidget extends StatefulWidget {
   final List<KLineEntity>? datas;
   final MainState mainState;
   final bool volHidden;
-  final SecondaryState secondaryState;
-  final Function()? onSecondaryTap;
+  final Set<SecondaryState> secondaryStateLi;
+  // final Function()? onSecondaryTap;
   final bool isLine;
-  final bool isTapShowInfoDialog; //Whether to enable click to display detailed data
+  final bool
+      isTapShowInfoDialog; //Whether to enable click to display detailed data
   final bool hideGrid;
   final bool showNowPrice;
   final bool showInfoDialog;
@@ -65,8 +66,8 @@ class KChartWidget extends StatefulWidget {
     required this.isTrendLine,
     this.xFrontPadding = 100,
     this.mainState = MainState.MA,
-    this.secondaryState = SecondaryState.NONE,
-    this.onSecondaryTap,
+    this.secondaryStateLi = const <SecondaryState>{},
+    // this.onSecondaryTap,
     this.volHidden = false,
     this.isLine = false,
     this.isTapShowInfoDialog = false,
@@ -91,8 +92,10 @@ class KChartWidget extends StatefulWidget {
   _KChartWidgetState createState() => _KChartWidgetState();
 }
 
-class _KChartWidgetState extends State<KChartWidget> with TickerProviderStateMixin {
-  final StreamController<InfoWindowEntity?> mInfoWindowStream = StreamController<InfoWindowEntity?>();
+class _KChartWidgetState extends State<KChartWidget>
+    with TickerProviderStateMixin {
+  final StreamController<InfoWindowEntity?> mInfoWindowStream =
+      StreamController<InfoWindowEntity?>();
   double mScaleX = 1.0, mScrollX = 0.0, mSelectX = 0.0;
   double mHeight = 0, mWidth = 0;
   AnimationController? _controller;
@@ -140,7 +143,7 @@ class _KChartWidgetState extends State<KChartWidget> with TickerProviderStateMix
     final BaseDimension baseDimension = BaseDimension(
       mBaseHeight: widget.mBaseHeight,
       volHidden: widget.volHidden,
-      secondaryState: widget.secondaryState,
+      secondaryStateLi: widget.secondaryStateLi,
     );
     final _painter = ChartPainter(
       widget.chartStyle,
@@ -160,7 +163,7 @@ class _KChartWidgetState extends State<KChartWidget> with TickerProviderStateMix
       isTapShowInfoDialog: widget.isTapShowInfoDialog,
       mainState: widget.mainState,
       volHidden: widget.volHidden,
-      secondaryState: widget.secondaryState,
+      secondaryStateLi: widget.secondaryStateLi,
       isLine: widget.isLine,
       hideGrid: widget.hideGrid,
       showNowPrice: widget.showNowPrice,
@@ -175,13 +178,15 @@ class _KChartWidgetState extends State<KChartWidget> with TickerProviderStateMix
         mWidth = constraints.maxWidth;
         return GestureDetector(
           onTapUp: (details) {
-            if (!widget.isTrendLine && widget.onSecondaryTap != null && _painter.isInSecondaryRect(details.localPosition)) {
-              widget.onSecondaryTap!();
-            }
+            // if (!widget.isTrendLine && widget.onSecondaryTap != null && _painter.isInSecondaryRect(details.localPosition)) {
+            //   widget.onSecondaryTap!();
+            // }
 
-            if (!widget.isTrendLine && _painter.isInMainRect(details.localPosition)) {
+            if (!widget.isTrendLine &&
+                _painter.isInMainRect(details.localPosition)) {
               isOnTap = true;
-              if (mSelectX != details.localPosition.dx && widget.isTapShowInfoDialog) {
+              if (mSelectX != details.localPosition.dx &&
+                  widget.isTapShowInfoDialog) {
                 mSelectX = details.localPosition.dx;
                 notifyChanged();
               }
@@ -189,8 +194,10 @@ class _KChartWidgetState extends State<KChartWidget> with TickerProviderStateMix
             if (widget.isTrendLine && !isLongPress && enableCordRecord) {
               enableCordRecord = false;
               Offset p1 = Offset(getTrendLineX(), mSelectY);
-              if (!waitingForOtherPairofCords)
-                lines.add(TrendLine(p1, Offset(-1, -1), trendLineMax!, trendLineScale!));
+              if (!waitingForOtherPairofCords) {
+                lines.add(TrendLine(
+                    p1, Offset(-1, -1), trendLineMax!, trendLineScale!));
+              }
 
               if (waitingForOtherPairofCords) {
                 var a = lines.last;
@@ -310,7 +317,8 @@ class _KChartWidgetState extends State<KChartWidget> with TickerProviderStateMix
   }
 
   void _onFling(double x) {
-    _controller = AnimationController(duration: Duration(milliseconds: widget.flingTime), vsync: this);
+    _controller = AnimationController(
+        duration: Duration(milliseconds: widget.flingTime), vsync: this);
     aniX = null;
     aniX = Tween<double>(begin: mScrollX, end: x * widget.flingRatio + mScrollX)
         .animate(CurvedAnimation(
